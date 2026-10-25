@@ -1,0 +1,316 @@
+﻿<Window x:Class="TVE.Ui.Views.HarmonicBatchWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        Title="TVE - Пакетный гармонический анализ"
+        Width="1500" Height="950"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        Icon="pack://application:,,,/Assets/tve.ico"
+        Background="{DynamicResource AppBackgroundBrush}">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="40" ResizeBorderThickness="8"
+                      GlassFrameThickness="0" CornerRadius="0"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="220"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ЗАГОЛОВОК -->
+        <Grid Grid.Row="0" Background="{DynamicResource TitleBarBackgroundBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       Text="TVE - Пакетный гармонический анализ"
+                       VerticalAlignment="Center" Margin="12,0,0,0"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource TitleBarTextBrush}"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="—" Width="46" Height="40"
+                        Style="{StaticResource CaptionButtonStyle}"
+                        Click="BtnMinimize_Click"
+                        WindowChrome.IsHitTestVisibleInChrome="True"/>
+                <Button Content="☐" Width="46" Height="40"
+                        Style="{StaticResource CaptionButtonStyle}"
+                        Click="BtnMaximize_Click"
+                        WindowChrome.IsHitTestVisibleInChrome="True"/>
+                <Button Content="✕" Width="46" Height="40"
+                        Style="{StaticResource CaptionButtonStyle}"
+                        Click="BtnClose_Click"
+                        WindowChrome.IsHitTestVisibleInChrome="True"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ИНФО О ФАЙЛЕ -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource TitleBarBackgroundBrush}"
+                Padding="16,12">
+            <StackPanel>
+                <TextBlock x:Name="FileNameText" Text="-"
+                           FontSize="15" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TitleBarTextBrush}"
+                           TextTrimming="CharacterEllipsis"/>
+                <TextBlock x:Name="FileStatsText" Text="-"
+                           FontSize="12" Opacity="0.7"
+                           Margin="0,4,0,0"
+                           Foreground="{DynamicResource TitleBarTextBrush}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ПАНЕЛЬ УПРАВЛЕНИЯ -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="0,1,0,1"
+                Padding="16,10" Margin="0,0,0,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Режим:"
+                           VerticalAlignment="Center" Margin="0,0,12,0"
+                           Foreground="{DynamicResource AppTextBrush}"/>
+
+                <RadioButton Grid.Column="1" x:Name="RadioBySegments"
+                             Content="По сегментам (VAD)"
+                             IsChecked="True" GroupName="Mode"
+                             VerticalAlignment="Center" Margin="0,0,20,0"
+                             Foreground="{DynamicResource AppTextBrush}"/>
+
+                <RadioButton Grid.Column="2" x:Name="RadioByFrames"
+                             Content="По кадрам (F0(t))"
+                             GroupName="Mode"
+                             VerticalAlignment="Center" Margin="0,0,24,0"
+                             Foreground="{DynamicResource AppTextBrush}"/>
+
+                <Button Grid.Column="3" x:Name="BtnRunAnalysis"
+                        Content="🚀  Запустить анализ"
+                        Height="32" Padding="18,0" Margin="0,0,16,0"
+                        Style="{StaticResource BottomButtonStyle}"
+                        Click="BtnRunAnalysis_Click"/>
+
+                <ProgressBar Grid.Column="4" x:Name="ProgressBar"
+                             Height="10" Minimum="0" Maximum="1"
+                             Margin="0,0,16,0" VerticalAlignment="Center"
+                             Background="Transparent"
+                             Foreground="{DynamicResource AccentBrush}"/>
+
+                <TextBlock Grid.Column="5" x:Name="ProgressText" Text=""
+                           VerticalAlignment="Center"
+                           FontSize="12" Opacity="0.7"
+                           Foreground="{DynamicResource AppTextBrush}"/>
+            </Grid>
+        </Border>
+
+        <!-- ПАНЕЛЬ МЕТРИК -->
+        <Border Grid.Row="3"
+                Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="0,1,0,1"
+                Padding="16,10" Margin="0,0,0,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Точек всего" FontSize="11" Opacity="0.6"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock x:Name="TotalPointsText" Text="-" FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="Валидных F0" FontSize="11" Opacity="0.6"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock x:Name="ValidPointsText" Text="-" FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="F0 mean" FontSize="11" Opacity="0.6"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock x:Name="F0MeanText" Text="-" FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3">
+                    <TextBlock Text="F0 median" FontSize="11" Opacity="0.6"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock x:Name="F0MedianText" Text="-" FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="4">
+                    <TextBlock Text="F0 min / max" FontSize="11" Opacity="0.6"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock x:Name="F0MinMaxText" Text="-" FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="5">
+                    <TextBlock Text="F0 stddev" FontSize="11" Opacity="0.6"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock x:Name="F0StdDevText" Text="-" FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="6">
+                    <TextBlock Text="Форманты (среднее)" FontSize="11" Opacity="0.6"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock x:Name="FormantsMeanText" Text="-" FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ТАБЛИЦА — ВОТ ТУТ БЫЛИ ПУСТЫЕ ПОЛОСКИ, ТЕПЕРЬ ДОБАВЛЕНЫ КОЛОНКИ -->
+        <Border Grid.Row="4"
+                Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="1" CornerRadius="6"
+                Padding="4" Margin="16,0,16,8">
+            <DataGrid x:Name="ResultsGrid"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserReorderColumns="True"
+                      CanUserResizeRows="False"
+                      HeadersVisibility="Column"
+                      RowHeaderWidth="0"
+                      RowHeight="22"
+                      GridLinesVisibility="All"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
+                      FontSize="11"
+                      Background="Transparent"
+                      BorderThickness="0"
+                      Foreground="{DynamicResource AppTextBrush}"
+                      RowBackground="Transparent"
+                      AlternatingRowBackground="{DynamicResource ButtonBackgroundBrush}"
+                      EnableRowVirtualization="True"
+                      EnableColumnVirtualization="True"
+                      VirtualizingPanel.IsVirtualizing="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling">
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Padding" Value="6,6"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Padding" Value="4,2"/>
+                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                    </Style>
+                </DataGrid.CellStyle>
+
+                <!-- КОЛОНКИ -->
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="№" Binding="{Binding Index}" Width="50"/>
+                    <DataGridTextColumn Header="Время (с)" Binding="{Binding TimeText}" Width="80"/>
+                    <DataGridTextColumn Header="Длит (с)" Binding="{Binding DurationText}" Width="70"/>
+                    <DataGridTextColumn Header="F0" Binding="{Binding F0Text}" Width="60"/>
+                    <DataGridTextColumn Header="Cepstrum" Binding="{Binding CepstrumText}" Width="75"/>
+                    <DataGridTextColumn Header="HPS" Binding="{Binding HpsText}" Width="60"/>
+                    <DataGridTextColumn Header="Autocorr" Binding="{Binding AutocorrText}" Width="75"/>
+                    <DataGridTextColumn Header="Согласие" Binding="{Binding AgreedText}" Width="70"/>
+                    <DataGridTextColumn Header="RMS" Binding="{Binding RmsText}" Width="70"/>
+                    <DataGridTextColumn Header="SNR" Binding="{Binding SnrText}" Width="55"/>
+                    <DataGridTextColumn Header="k1..k8" Binding="{Binding KText}" Width="320"/>
+                    <DataGridTextColumn Header="F1..F4" Binding="{Binding FText}" Width="180"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- ГРАФИК F0(t) -->
+        <Border Grid.Row="5"
+                Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="1" CornerRadius="6"
+                Padding="4" Margin="16,0,16,8">
+            <oxy:PlotView x:Name="F0Plot"
+                          Background="Transparent"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"/>
+        </Border>
+
+        <!-- КНОПКИ ЭКСПОРТА -->
+        <Border Grid.Row="6"
+                Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" x:Name="StatusText"
+                           Text="Готов к анализу"
+                           VerticalAlignment="Center"
+                           FontSize="12" Opacity="0.7"
+                           Foreground="{DynamicResource AppTextBrush}"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="📁  Экспорт CSV"
+                            x:Name="BtnExportCsv"
+                            Height="34" Padding="16,0" Margin="0,0,8,0"
+                            IsEnabled="False"
+                            Style="{StaticResource BottomButtonStyle}"
+                            Click="BtnExportCsv_Click"/>
+
+                    <Button Content="🖼  Экспорт PNG"
+                            x:Name="BtnExportPng"
+                            Height="34" Padding="16,0"
+                            IsEnabled="False"
+                            Style="{StaticResource BottomButtonStyle}"
+                            Click="BtnExportPng_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

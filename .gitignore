@@ -1,0 +1,19 @@
+# Папки сборки
+bin/
+obj/
+.vs/
+
+# Модели (слишком большие для Git)
+Models/
+*.bin
+*.onnx
+
+# Диагностические файлы
+debug_segments/
+debug_decoded/
+*.wav
+*.mp3
+
+# Системные файлы
+.DS_Store
+Thumbs.db

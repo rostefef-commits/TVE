@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="TVE.Core/TVE.Core.csproj" />
+  <Project Path="TVE.HarmonicTest/TVE.HarmonicTest.csproj" Id="82199413-369e-434e-bea4-5771860a785c" />
+  <Project Path="TVE.Ui/TVE.Ui.csproj" />
+</Solution>

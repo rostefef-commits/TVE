@@ -1,0 +1,1006 @@
+﻿<Window x:Class="TVE.Ui.Views.AnalysisWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:TVE.Ui.Converters"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        Title="TVE - Анализ" Width="1100" Height="750"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip"
+        Icon="pack://application:,,,/Assets/tve.ico"
+        Background="{DynamicResource AppBackgroundBrush}">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="40" ResizeBorderThickness="8"
+                      GlassFrameThickness="0" CornerRadius="0"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <conv:LogLevelToBrushConverter x:Key="LogLevelToBrush"/>
+
+        <!-- Переопределение системных цветов для трекера OxyPlot.
+             В тёмной теме Windows системные цвета делают текст белым
+             на жёлтом фоне — подсказки становятся нечитаемыми.
+             Эти две строки переопределяют цвета только в этом окне. -->
+        <SolidColorBrush x:Key="{x:Static SystemColors.InfoBrushKey}" Color="#FFEB9C"/>
+        <SolidColorBrush x:Key="{x:Static SystemColors.InfoTextBrushKey}" Color="#000000"/>
+
+        <Style TargetType="{x:Type ToolTip}">
+            <Setter Property="Background" Value="#FFEB9C"/>
+            <Setter Property="Foreground" Value="#000000"/>
+            <Setter Property="BorderBrush" Value="#C9A227"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="6,4"/>
+        </Style>
+
+        <Style x:Key="AnalysisButton" TargetType="Button">
+            <Setter Property="Width" Value="140"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ButtonTextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.85"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ThresholdSpinButton" TargetType="Button">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ButtonTextBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.75"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="MainTabItemStyle" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBorder"
+                                MinWidth="150" Height="32"
+                                Background="{DynamicResource PanelBackgroundBrush}"
+                                BorderBrush="{DynamicResource PanelBorderBrush}"
+                                BorderThickness="0,0,0,1"
+                                Margin="0,0,2,0" Padding="12,0"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              TextElement.Foreground="{DynamicResource AppTextBrush}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background"
+                                        Value="{DynamicResource AppBackgroundBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBorder" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="StretchTabItemStyle" TargetType="TabItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Кастомный заголовок -->
+        <Grid Grid.Row="0" Background="{DynamicResource TitleBarBackgroundBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="TVE - Анализ"
+                       VerticalAlignment="Center" Margin="12,0,0,0"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource TitleBarTextBrush}"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="—" Width="46" Height="40"
+                        Style="{StaticResource CaptionButtonStyle}"
+                        Click="BtnMinimize_Click"
+                        WindowChrome.IsHitTestVisibleInChrome="True"/>
+                <Button Content="☐" Width="46" Height="40"
+                        Style="{StaticResource CaptionButtonStyle}"
+                        Click="BtnMaximize_Click"
+                        WindowChrome.IsHitTestVisibleInChrome="True"/>
+                <Button Content="✕" Width="46" Height="40"
+                        Style="{StaticResource CaptionButtonStyle}"
+                        Click="BtnClose_Click"
+                        WindowChrome.IsHitTestVisibleInChrome="True"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Шапка с кнопками -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource TitleBarBackgroundBrush}"
+                Padding="16,12" Margin="0,0,0,4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Анализ работы программы"
+                           FontSize="18" FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TitleBarTextBrush}"/>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Button Content="📊  Гармоники"
+                            Height="32" Padding="18,0"
+                            Margin="0,0,8,0"
+                            Style="{StaticResource AnalysisButton}"
+                            Click="BtnHarmonics_Click"
+                            ToolTip="Анализ гармонической и формантной структуры одного кадра аудиофайла"/>
+
+                    <Button Content="📊  Пакетный анализ"
+                            Height="32" Padding="18,0"
+                            Style="{StaticResource AnalysisButton}"
+                            Click="BtnBatchAnalysis_Click"
+                            ToolTip="Массовый анализ: по VAD-сегментам или по кадрам."/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="2" x:Name="MainTabControl"
+                    Background="{DynamicResource AppBackgroundBrush}"
+                    BorderThickness="0" Margin="10"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch">
+
+            <!-- МОДУЛИ -->
+            <TabItem Header="Модули" Style="{StaticResource MainTabItemStyle}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,10,0" HorizontalContentAlignment="Stretch">
+                    <StackPanel HorizontalAlignment="Stretch">
+                        <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="🔧  Аудио и захват" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="{DynamicResource AppTextBrush}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Устройство ввода:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="MicDeviceText" Text="-" Margin="0,4" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Статус:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="MicStatusText" Text="-" Margin="0,4" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Формат записи:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="MicFormatText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Текущий RMS:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" x:Name="MicRmsText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Порог VAD:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" x:Name="MicVadThresholdText" Text="0.010 (RMS)" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="🎤  Распознавание речи (Whisper)" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="{DynamicResource AppTextBrush}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Модель:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="WhisperModelText" Text="-" Margin="0,4" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Размер модели:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="WhisperSizeText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Язык:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="WhisperLanguageText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Статус:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" x:Name="WhisperStatusText" Text="-" Margin="0,4" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="🧬  Идентификация голоса (sherpa-onnx)" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="{DynamicResource AppTextBrush}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Модель:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="EmbedderModelText" Text="-" Margin="0,4" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Размер модели:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="EmbedderSizeText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Размерность вектора:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="EmbedderDimText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Статус:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" x:Name="EmbedderStatusText" Text="-" Margin="0,4" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="💾  База данных" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="{DynamicResource AppTextBrush}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Путь:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="DbPathText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Размер файла:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="DbSizeText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Голосов в базе:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="DbSpeakersText" Text="-" Margin="0,4" FontWeight="SemiBold" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Всего реплик:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" x:Name="DbUtterancesText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="⚙  Приложение" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="{DynamicResource AppTextBrush}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Версия:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="AppVersionText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Тема:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="AppThemeText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Время работы:" Margin="0,4" Foreground="{DynamicResource AppTextBrush}" Opacity="0.7"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="AppUptimeText" Text="-" Margin="0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ЛОГ -->
+            <TabItem Header="Лог" Style="{StaticResource MainTabItemStyle}">
+                <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="Модуль:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource AppTextBrush}"/>
+                            <ComboBox Grid.Column="1" x:Name="ModuleFilterCombo" Width="140" Height="30" Margin="0,0,16,0" SelectedIndex="0" SelectionChanged="ModuleFilter_Changed">
+                                <ComboBoxItem Content="Все"/>
+                                <ComboBoxItem Content="Mic"/>
+                                <ComboBoxItem Content="VAD"/>
+                                <ComboBoxItem Content="Whisper"/>
+                                <ComboBoxItem Content="Sherpa"/>
+                                <ComboBoxItem Content="DB"/>
+                                <ComboBoxItem Content="Command"/>
+                                <ComboBoxItem Content="UI"/>
+                            </ComboBox>
+
+                            <TextBlock Grid.Column="2" Text="Уровень:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource AppTextBrush}"/>
+                            <ComboBox Grid.Column="3" x:Name="LevelFilterCombo" Width="140" Height="30" HorizontalAlignment="Left" SelectedIndex="0" SelectionChanged="LevelFilter_Changed">
+                                <ComboBoxItem Content="Все"/>
+                                <ComboBoxItem Content="Info"/>
+                                <ComboBoxItem Content="Ok"/>
+                                <ComboBoxItem Content="Warn"/>
+                                <ComboBoxItem Content="Error"/>
+                            </ComboBox>
+
+                            <Button Grid.Column="4" Content="🗑 Очистить" Style="{StaticResource AnalysisButton}" Click="ClearLog_Click"/>
+                            <Button Grid.Column="5" Content="💾 Сохранить" Style="{StaticResource AnalysisButton}" Click="SaveLog_Click"/>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="6"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <ListView x:Name="LogList" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="Margin" Value="0"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="4,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding TimeText}" FontFamily="Consolas" FontSize="12" Opacity="0.6" Foreground="{DynamicResource AppTextBrush}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Module}" FontFamily="Consolas" FontSize="12" FontWeight="SemiBold" Foreground="{Binding Level, Converter={StaticResource LogLevelToBrush}}"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Message}" FontSize="13" TextWrapping="Wrap" Foreground="{Binding Level, Converter={StaticResource LogLevelToBrush}}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ГОЛОСА -->
+            <TabItem Header="Голоса" Style="{StaticResource MainTabItemStyle}">
+                <TabControl Background="Transparent" BorderThickness="0" Margin="0,6,0,0" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+
+                    <TabItem Header="Матрица сходства" Style="{StaticResource StretchTabItemStyle}">
+                        <Grid Margin="0,6,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="6" Margin="0,0,0,8"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                <DataGrid x:Name="MatrixGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                                          CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False"
+                                          CanUserResizeRows="False" CanUserSortColumns="False" HeadersVisibility="Column"
+                                          RowHeaderWidth="0" RowHeight="28" GridLinesVisibility="All"
+                                          HorizontalGridLinesBrush="{DynamicResource PanelBorderBrush}"
+                                          VerticalGridLinesBrush="{DynamicResource PanelBorderBrush}"
+                                          HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                          FontSize="12" Background="Transparent" BorderThickness="0"
+                                          Foreground="{DynamicResource AppTextBrush}" RowBackground="Transparent"
+                                          SelectionUnit="Cell"
+                                          PreviewMouseLeftButtonDown="MatrixGrid_PreviewMouseLeftButtonDown"
+                                          PreviewMouseRightButtonDown="MatrixGrid_PreviewMouseRightButtonDown">
+                                    <DataGrid.ColumnHeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="Background" Value="#000000"/>
+                                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Padding" Value="6,6"/>
+                                            <Setter Property="BorderBrush" Value="#444444"/>
+                                            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGrid.ColumnHeaderStyle>
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                            <Setter Property="VerticalAlignment" Value="Stretch"/>
+                                        </Style>
+                                    </DataGrid.CellStyle>
+                                </DataGrid>
+                            </Border>
+
+                            <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="Легенда цветов:" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <Ellipse Width="14" Height="14" Fill="#C62828" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Очень похожи (0.75 и выше)" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <Ellipse Width="14" Height="14" Fill="#EF6C00" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Похожи (0.55 - 0.75)" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <Ellipse Width="14" Height="14" Fill="#F9A825" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Умеренно схожи (0.35 - 0.55)" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="14" Height="14" Fill="#2E7D32" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Разные голоса (меньше 0.35)" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <TextBlock Text="Как пользоваться матрицей:" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85" Foreground="{DynamicResource AppTextBrush}"
+                                               Text="Кликните ЛЕВОЙ кнопкой мыши по имени в чёрной шапке таблицы, чтобы отсортировать все голоса по схожести с ним. Рядом с выбранным именем появится галочка. Чтобы сбросить фильтр - кликните ПРАВОЙ кнопкой мыши по любому имени в шапке."/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Сравнение 2 голосов" Style="{StaticResource StretchTabItemStyle}">
+                        <Grid Margin="0,6,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Text="Голос A:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <ComboBox Grid.Column="1" x:Name="SpeakerACombo" Height="30" Margin="0,0,16,0" SelectionChanged="SpeakerCombo_Changed"/>
+
+                                    <TextBlock Grid.Column="2" Text="Голос B:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource AppTextBrush}"/>
+                                    <ComboBox Grid.Column="3" x:Name="SpeakerBCombo" Height="30" Margin="0,0,16,0" SelectionChanged="SpeakerCombo_Changed"/>
+
+                                    <Button Grid.Column="4" Content="🔄 Сброс" Style="{StaticResource AnalysisButton}" Click="ResetPlot_Click"/>
+                                    <Button Grid.Column="5" Content="💾 PNG" Style="{StaticResource AnalysisButton}" Margin="0" Click="ExportPlot_Click"/>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="4" Margin="0,0,0,8"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="280">
+                                <oxy:PlotView x:Name="EmbeddingPlot"
+                                              Background="Transparent"
+                                              HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Stretch"
+                                              MinHeight="260"/>
+                            </Border>
+
+                            <Border Grid.Row="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
+                                        <Ellipse x:Name="SimilarityDot" Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="SimilarityText" Text="Выберите два голоса для сравнения" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <Ellipse Width="12" Height="12" Fill="#C62828" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Очень похожи" FontSize="11" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <Ellipse Width="12" Height="12" Fill="#EF6C00" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Похожи" FontSize="11" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <Ellipse Width="12" Height="12" Fill="#F9A825" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Умеренно схожи" FontSize="11" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="12" Height="12" Fill="#2E7D32" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Разные голоса" FontSize="11" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="Что такое эмбеддинг и из чего он строится:"
+                                               FontSize="13" FontWeight="SemiBold"
+                                               Margin="0,0,0,4"
+                                               Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85"
+                                               Foreground="{DynamicResource AppTextBrush}"
+                                               Text="Эмбеддинг - это числовой вектор (набор чисел), который описывает уникальные характеристики голоса человека. Модель sherpa-onnx (3D-Speaker ERes2Net) строит его, анализируя акустические признаки аудиофрагмента: тембр, высоту тона, темп речи, форманты (характерные частоты), энергию сигнала. Отпечаток получается стабильным: у одного человека он почти одинаков на разных фразах, а у разных людей - заметно различается. Размерность вектора - 512 чисел (float). На графике по оси X отложен индекс компоненты вектора (0..511), по оси Y - значение этой компоненты. Две линии показывают, как меняются значения по всем 512 компонентам для двух голосов."/>
+
+                                    <TextBlock Text="От чего зависит сходство:"
+                                               FontSize="13" FontWeight="SemiBold"
+                                               Margin="0,10,0,4"
+                                               Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85"
+                                               Foreground="{DynamicResource AppTextBrush}"
+                                               Text="Косинусное сходство между двумя эмбеддингами показывает, насколько голоса похожи: 1 - идентичные, 0 - совершенно разные. Сходство растёт, если у людей близкий тембр (например, родственники), одинаковая высота голоса, схожая манера речи. Сходство падает при разнице пола, возраста, акцента, а также при разном качестве записи (шум, расстояние до микрофона, разные устройства). Порог 0.55 в программе означает: если сходство выше 0.55, программа считает, что это один и тот же человек."/>
+
+                                    <TextBlock Text="Как пользоваться графиком:"
+                                               FontSize="13" FontWeight="SemiBold"
+                                               Margin="0,10,0,4"
+                                               Foreground="{DynamicResource AppTextBrush}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85"
+                                               Foreground="{DynamicResource AppTextBrush}"
+                                               Text="Выберите двух говорящих в полях «Голос A» и «Голос B» выше. На графике появятся две линии: красная - первый голос, синяя - второй. Чем ближе формы линий совпадают, тем выше сходство. Ниже графика показано точное значение косинусного сходства и его категория (Очень похожи / Похожи / Умеренно схожи / Разные голоса). Нажатие левой кнопки мыши по линии показывает точное значение в этой точке. Колесо мыши - приближение и отдаление. Правая кнопка мыши + перетаскивание - сдвиг графика. Кнопка «Сброс» возвращает исходный вид. Кнопка «PNG» сохраняет график картинкой. Если выбрать прочерк в одном из полей - будет показан только эмбеддинг выбранного голоса."/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </TabItem>
+
+            <!-- КАРТА ГОЛОСОВ -->
+            <TabItem Header="Карта голосов" Style="{StaticResource MainTabItemStyle}">
+                <Grid Margin="0,6,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="Порог линий:"
+                                       VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+
+                            <ComboBox Grid.Column="1" x:Name="LineThresholdCombo"
+                                      Width="80" Height="28" Margin="0,0,4,0"
+                                      MaxDropDownHeight="260"
+                                      SelectionChanged="LineThreshold_Changed"/>
+
+                            <StackPanel Grid.Column="2" Orientation="Vertical" Margin="0,0,16,0" VerticalAlignment="Center">
+                                <Button x:Name="ThresholdUpButton" Content="▲"
+                                        Style="{StaticResource ThresholdSpinButton}"
+                                        Click="ThresholdUp_Click"
+                                        ToolTip="Увеличить порог на 0.05"/>
+                                <Button x:Name="ThresholdDownButton" Content="▼"
+                                        Style="{StaticResource ThresholdSpinButton}"
+                                        Margin="0,2,0,0"
+                                        Click="ThresholdDown_Click"
+                                        ToolTip="Уменьшить порог на 0.05"/>
+                            </StackPanel>
+
+                            <TextBlock Grid.Column="3"
+                                       Text="Каждый голос - точка. Цвет точки - кластер, цвет линии - сила сходства. Клик - подсветка связей, двойной - детали."
+                                       VerticalAlignment="Center" FontSize="12" Opacity="0.7"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+
+                            <TextBlock Grid.Column="4"
+                                       VerticalAlignment="Center" FontSize="12"
+                                       Margin="16,0,16,0"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource AppTextBrush}">
+                                <Run Text="Рекомендуемый порог:" FontWeight="SemiBold"/>
+                                <Run Text=" 0.50 - 0.55" FontWeight="SemiBold" Foreground="#43A047"/>
+                            </TextBlock>
+
+                            <Button Grid.Column="5" Content="🔄 Обновить"
+                                    Style="{StaticResource AnalysisButton}"
+                                    Click="RefreshVoiceMap_Click"/>
+
+                            <Button Grid.Column="6" Content="⚠ Проблемные пары"
+                                    Style="{StaticResource AnalysisButton}"
+                                    Width="180"
+                                    Click="ShowProblematicPairs_Click"/>
+
+                            <Button Grid.Column="7" Content="💾 PNG"
+                                    Style="{StaticResource AnalysisButton}"
+                                    Margin="0"
+                                    Click="ExportVoiceMap_Click"/>
+                        </Grid>
+                    </Border>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="320"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0"
+                                Background="{DynamicResource PanelBackgroundBrush}"
+                                BorderBrush="{DynamicResource PanelBorderBrush}"
+                                BorderThickness="1" CornerRadius="6"
+                                Padding="4" Margin="0,0,8,0"
+                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                MinHeight="320">
+                            <oxy:PlotView x:Name="VoiceMapPlot"
+                                          Background="Transparent"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
+                                          MinHeight="300"/>
+                        </Border>
+
+                        <Border Grid.Column="1"
+                                Background="{DynamicResource PanelBackgroundBrush}"
+                                BorderBrush="{DynamicResource PanelBorderBrush}"
+                                BorderThickness="1" CornerRadius="6"
+                                Padding="12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="Статистика кластеров"
+                                           FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppTextBrush}"
+                                           Margin="0,0,0,8"/>
+
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <StackPanel x:Name="ClusterStatsPanel"/>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <Border Grid.Row="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Цвета линий связи:" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" Foreground="{DynamicResource AppTextBrush}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                    <Rectangle Width="24" Height="4" Fill="#43A047" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Слабая (0.35 - 0.50)" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                    <Rectangle Width="24" Height="4" Fill="#FBC02D" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Заметная (0.50 - 0.60)" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                    <Rectangle Width="24" Height="4" Fill="#EF6C00" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Сильная (0.60 - 0.70)" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Rectangle Width="24" Height="4" Fill="#C62828" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Очень сильная (0.70+)" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <TextBlock Text="Что такое карта голосов:" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85" Foreground="{DynamicResource AppTextBrush}"
+                                       Text="Каждый голосовой отпечаток (эмбеддинг) - это вектор из 512 чисел. Программа применяет метод PCA, сжимая 512 измерений до 2, сохраняя максимум информации о схожести голосов. Похожие голоса оказываются рядом, разные - далеко друг от друга."/>
+
+                            <TextBlock Text="Как управлять:" FontSize="13" FontWeight="SemiBold" Margin="0,10,0,4" Foreground="{DynamicResource AppTextBrush}"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85" Foreground="{DynamicResource AppTextBrush}"
+                                       Text="Порог линий - минимальное сходство, при котором рисуется связь между двумя голосами. Кнопки ▲▼ рядом с порогом изменяют его на 0.05. Одиночный клик по точке - подсветка её 3 ближайших соседей (независимо от порога). Двойной клик - детали голоса. Клик по пустому месту карты - сброс подсветки."/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- СЛИЯНИЕ ЭМБЕДДИНГОВ -->
+            <TabItem Header="Слияние эмбеддингов" Style="{StaticResource MainTabItemStyle}">
+                <Grid Margin="0,6,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Панель управления -->
+                    <Border Grid.Row="0"
+                            Background="{DynamicResource PanelBackgroundBrush}"
+                            BorderBrush="{DynamicResource PanelBorderBrush}"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="10" Margin="0,0,0,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="Говорящий:"
+                                       VerticalAlignment="Center" Margin="0,0,8,0"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+
+                            <ComboBox Grid.Column="1"
+                                      x:Name="MergeSpeakerCombo"
+                                      Width="280" Height="30"
+                                      Margin="0,0,16,0"
+                                      SelectionChanged="MergeSpeakerCombo_SelectionChanged"/>
+
+                            <TextBlock Grid.Column="2"
+                                       x:Name="MergeStatusText"
+                                       VerticalAlignment="Center"
+                                       FontSize="12" Opacity="0.7"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+
+                            <Button Grid.Column="3"
+                                    Content="🔄 Обновить"
+                                    Style="{StaticResource AnalysisButton}"
+                                    Click="MergeRefresh_Click"/>
+
+                            <Button Grid.Column="4"
+                                    Content="🖼 PNG"
+                                    Style="{StaticResource AnalysisButton}"
+                                    Margin="0"
+                                    Click="MergeExportPng_Click"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Три полосы + легенда -->
+                    <Border Grid.Row="1"
+                            Background="{DynamicResource PanelBackgroundBrush}"
+                            BorderBrush="{DynamicResource PanelBorderBrush}"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="16,12" Margin="0,0,0,8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0"
+                                       Text="Старый эмбеддинг"
+                                       VerticalAlignment="Center" FontSize="13"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+                            <Image Grid.Row="0" Grid.Column="1"
+                                   x:Name="MergeImageOld"
+                                   Height="24" Margin="8,4"
+                                   Stretch="Fill"
+                                   SnapsToDevicePixels="True"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0"
+                                       Text="Новое наблюдение"
+                                       VerticalAlignment="Center" FontSize="13"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+                            <Image Grid.Row="1" Grid.Column="1"
+                                   x:Name="MergeImageNew"
+                                   Height="24" Margin="8,4"
+                                   Stretch="Fill"
+                                   SnapsToDevicePixels="True"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0"
+                                       Text="Результат слияния"
+                                       VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+                            <Image Grid.Row="2" Grid.Column="1"
+                                   x:Name="MergeImageMerged"
+                                   Height="24" Margin="8,4"
+                                   Stretch="Fill"
+                                   SnapsToDevicePixels="True"/>
+
+                            <!-- Легенда цветов компонент -->
+                            <StackPanel Grid.Row="3" Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        Margin="8,8,0,0">
+                                <TextBlock Text="Цвет компоненты:"
+                                           FontSize="11" Opacity="0.7"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,10,0"
+                                           Foreground="{DynamicResource AppTextBrush}"/>
+                                <Rectangle Width="14" Height="14"
+                                           Fill="#2864DC"
+                                           Margin="0,0,4,0"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="-1"
+                                           FontSize="11"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,14,0"
+                                           Foreground="{DynamicResource AppTextBrush}"/>
+                                <Rectangle Width="14" Height="14"
+                                           Fill="White"
+                                           Stroke="#808080"
+                                           StrokeThickness="1"
+                                           Margin="0,0,4,0"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="0"
+                                           FontSize="11"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,14,0"
+                                           Foreground="{DynamicResource AppTextBrush}"/>
+                                <Rectangle Width="14" Height="14"
+                                           Fill="#DC2828"
+                                           Margin="0,0,4,0"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="+1"
+                                           FontSize="11"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource AppTextBrush}"/>
+                            </StackPanel>
+
+                            <Separator Grid.Row="4" Grid.ColumnSpan="2"
+                                       Background="{DynamicResource PanelBorderBrush}"
+                                       Margin="0,10,0,10"/>
+
+                            <TextBlock Grid.Row="5" Grid.Column="0"
+                                       Text="cos(old, new) ="
+                                       FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+                            <TextBlock Grid.Row="5" Grid.Column="1"
+                                       x:Name="MergeCosOldNew"
+                                       Text="-" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+                            <TextBlock Grid.Row="6" Grid.Column="0"
+                                       Text="cos(old, merged) ="
+                                       FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+                            <TextBlock Grid.Row="6" Grid.Column="1"
+                                       x:Name="MergeCosOldMerged"
+                                       Text="-" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+                            <TextBlock Grid.Row="7" Grid.Column="0"
+                                       Text="cos(new, merged) ="
+                                       FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+                            <TextBlock Grid.Row="7" Grid.Column="1"
+                                       x:Name="MergeCosNewMerged"
+                                       Text="-" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+                            <TextBlock Grid.Row="8" Grid.Column="0"
+                                       Text="Параметры слияния:"
+                                       FontSize="13" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppTextBrush}"
+                                       Margin="0,8,0,0"/>
+                            <TextBlock Grid.Row="8" Grid.Column="1"
+                                       x:Name="MergeThetaT"
+                                       Text="-" FontSize="13"
+                                       Foreground="{DynamicResource AppTextBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="8,8,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Пояснение цвета полос -->
+                    <Border Grid.Row="2"
+                            Background="{DynamicResource PanelBackgroundBrush}"
+                            BorderBrush="{DynamicResource PanelBorderBrush}"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="12,8" Margin="0,0,0,8">
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85"
+                                   Foreground="{DynamicResource AppTextBrush}"
+                                   Text="Три полосы показывают 512 значений эмбеддинга. Цвет ячейки: синий (-1) - белый (0) - красный (+1). Чем ближе полосы old и merged, тем меньше сдвиг при слиянии. cos(old, new) показывает, насколько новое наблюдение отличалось от старого. cos(old, merged) и cos(new, merged) - насколько результат слияния близок к каждому из них."/>
+                    </Border>
+
+                    <!-- 2D-визуализация -->
+                    <Border Grid.Row="3"
+                            Background="{DynamicResource PanelBackgroundBrush}"
+                            BorderBrush="{DynamicResource PanelBorderBrush}"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="4">
+                        <oxy:PlotView x:Name="MergeSpherePlot"
+                                      Background="Transparent"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      MinHeight="260"/>
+                    </Border>
+
+                    <!-- Большое пояснение -->
+                    <Border Grid.Row="4"
+                            Background="{DynamicResource PanelBackgroundBrush}"
+                            BorderBrush="{DynamicResource PanelBorderBrush}"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="14" Margin="0,8,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Что такое слияние эмбеддингов:"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Margin="0,0,0,4"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85"
+                                       Foreground="{DynamicResource AppTextBrush}"
+                                       Text="Эмбеддинг голоса - вектор из 512 чисел, нормированный на единичную длину. Это значит, что каждая точка лежит на поверхности 512-мерной сферы. Когда приходит новая реплика от того же человека, её эмбеддинг оказывается в другой точке сферы - потому что голос каждый раз звучит чуть иначе. Слияние через SLERP (Spherical Linear intERPolation) плавно сдвигает старый эмбеддинг в сторону нового по дуге большого круга. Параметр t - это доля пути: t=0 - не двигаем, t=1 - полностью заменяем. Вес t зависит от уверенности: чем выше cos(old, new), тем сильнее сдвиг, но не больше 0.5, чтобы одно наблюдение не перезаписывало весь профиль."/>
+
+                            <TextBlock Text="Как читать график:"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Margin="0,10,0,4"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85"
+                                       Foreground="{DynamicResource AppTextBrush}"
+                                       Text="Серая окружность - сечение единичной сферы плоскостью, натянутой на old и new. Три луча из центра: синий - старый эмбеддинг, зелёный - новое наблюдение, красный - результат слияния. Жёлтая дуга - траектория SLERP от old к new. Подпись θ - угол между old и new (мера различия наблюдений), t - вес нового наблюдения. Все три вектора лежат на сфере: |old| = |new| = |merged| = 1."/>
+
+                            <TextBlock Text="Как читать косинусы и полосы:"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Margin="0,10,0,4"
+                                       Foreground="{DynamicResource AppTextBrush}"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85"
+                                       Foreground="{DynamicResource AppTextBrush}"
+                                       Text="cos(old, new) показывает, насколько наблюдение отличалось от старого профиля: высокое (0.9+) - голос стабилен, среднее (0.6-0.8) - заметное изменение, низкое (&lt; 0.6) - либо другое состояние голоса (простуда, шёпот), либо ошибка идентификации. cos(old, merged) и cos(new, merged) - насколько результат слияния удалён от каждого из исходных: оба близки к 1 - слияние плавное, один из них заметно меньше - слияние сдвинуло профиль сильно. Три цветные полосы показывают 512 значений эмбеддинга: синий - отрицательное, белый - нуль, красный - положительное. Масштаб цвета одинаков для всех трёх полос, чтобы их можно было сравнивать напрямую."/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+    </Grid>
+</Window>

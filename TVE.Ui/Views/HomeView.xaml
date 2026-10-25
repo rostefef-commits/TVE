@@ -1,0 +1,126 @@
+﻿<UserControl x:Class="TVE.Ui.Views.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="60"/>
+        </Grid.RowDefinitions>
+
+        <!-- ======= ЦЕНТРАЛЬНАЯ ЧАСТЬ ======= -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Левая панель -->
+            <Border x:Name="LeftPanel" Grid.Column="0"
+                    Background="{DynamicResource PanelBackgroundBrush}"
+                    BorderBrush="{DynamicResource PanelBorderBrush}"
+                    BorderThickness="1" CornerRadius="8"
+                    Margin="30,0,15,0" Padding="20"
+                    VerticalAlignment="Center" MaxWidth="350" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="Кто говорит:" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock x:Name="SpeakerNameText" Text="..." FontSize="18"
+                               Foreground="{DynamicResource AppTextBrush}"
+                               Margin="0,4,0,12" TextWrapping="Wrap"/>
+                    <Separator Background="{DynamicResource PanelBorderBrush}" Margin="0,0,0,12"/>
+                    <TextBlock Text="Описание:" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                    <TextBlock x:Name="SpeakerDescriptionText" Text="пока тут пусто"
+                               FontSize="13" Opacity="0.8"
+                               Foreground="{DynamicResource AppTextBrush}"
+                               TextWrapping="Wrap" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Центр: заголовок, круг, статус -->
+            <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="The Voice of Eternity" FontSize="32"
+                           HorizontalAlignment="Center" Margin="0,0,0,40"
+                           FontWeight="Light" Foreground="{DynamicResource AppTextBrush}"/>
+
+                <Grid Width="200" Height="200" AllowDrop="True"
+                      DragEnter="MicrophoneCircle_DragEnter"
+                      DragOver="MicrophoneCircle_DragOver"
+                      DragLeave="MicrophoneCircle_DragLeave"
+                      Drop="MicrophoneCircle_Drop">
+                    <Ellipse x:Name="MicrophoneCircle" Fill="{DynamicResource MicIdleBrush}"
+                             Cursor="Hand" MouseLeftButtonDown="MicrophoneCircle_MouseLeftButtonDown"/>
+                    <TextBlock x:Name="MicIconText" Text="🎤" FontSize="64" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                    <TextBlock x:Name="DropIconText" Text="⬇" FontSize="80" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False" Visibility="Collapsed"/>
+                </Grid>
+
+                <TextBlock x:Name="CircleStatusText" Text=""
+                           FontSize="15" FontWeight="SemiBold"
+                           Foreground="{DynamicResource WarningBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,20,0,0"
+                           Visibility="Collapsed"/>
+            </StackPanel>
+
+            <!-- Правая панель -->
+            <Border x:Name="RightPanel" Grid.Column="2"
+                    Background="{DynamicResource PanelBackgroundBrush}"
+                    BorderBrush="{DynamicResource PanelBorderBrush}"
+                    BorderThickness="1" CornerRadius="8"
+                    Margin="15,0,30,0" Padding="20"
+                    VerticalAlignment="Center" MaxWidth="350" Visibility="Collapsed">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" x:Name="RightPanelHeader" Text="Говорите..."
+                               FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppTextBrush}"/>
+                    <Separator Grid.Row="0" Background="{DynamicResource PanelBorderBrush}"
+                               Margin="0,28,0,0"/>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                  MaxHeight="200" Margin="0,12,0,12">
+                        <TextBlock x:Name="TranscriptionText" Text=""
+                                   FontSize="14" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource AppTextBrush}"/>
+                    </ScrollViewer>
+
+                    <Button Grid.Row="2" x:Name="StopButton" Content="СТОП"
+                            HorizontalAlignment="Right" Width="80" Height="32"
+                            Background="#E53935" Foreground="White"
+                            BorderThickness="0" FontWeight="SemiBold"
+                            Click="StopButton_Click" Visibility="Collapsed"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ======= НИЖНИЕ КНОПКИ ======= -->
+        <Grid Grid.Row="1" Margin="20,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Content="Голоса в базе" Height="40" Padding="20,0"
+                    Style="{StaticResource BottomButtonStyle}" Click="BtnVoices_Click"/>
+
+            <!-- Правая группа: Анализ + Настройки рядом -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button Content="Анализ" Height="40" Padding="20,0" Margin="0,0,10,0"
+                        Style="{StaticResource BottomButtonStyle}" Click="BtnAnalysis_Click"/>
+                <Button Content="Настройки" Height="40" Padding="20,0"
+                        Style="{StaticResource BottomButtonStyle}" Click="BtnSettings_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

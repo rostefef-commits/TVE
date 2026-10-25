@@ -1,0 +1,214 @@
+﻿<UserControl x:Class="TVE.Ui.Views.VoicesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="60"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="40,30,40,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Заголовок + сортировка + экспорт всех -->
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Голоса в базе"
+                           FontSize="28" FontWeight="Light"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource AppTextBrush}"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal"
+                            VerticalAlignment="Center" Margin="0,0,12,0">
+                    <TextBlock Text="Сортировка:"
+                               FontSize="13" VerticalAlignment="Center"
+                               Margin="0,0,8,0"
+                               Foreground="{DynamicResource AppTextBrush}"
+                               Opacity="0.7"/>
+                    <ComboBox x:Name="SortComboBox"
+                              Width="240" Height="30"
+                              SelectedIndex="0"
+                              SelectionChanged="SortComboBox_SelectionChanged">
+                        <ComboBoxItem Content="По дате (сначала новые)" Tag="DateNewFirst"/>
+                        <ComboBoxItem Content="По дате (сначала старые)" Tag="DateOldFirst"/>
+                        <ComboBoxItem Content="По имени (А - Я)" Tag="NameAsc"/>
+                        <ComboBoxItem Content="По имени (Я - А)" Tag="NameDesc"/>
+                        <ComboBoxItem Content="По количеству реплик" Tag="UtteranceCountDesc"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        x:Name="ExportAllButton"
+                        Height="30" Padding="14,0"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource BottomButtonStyle}"
+                        Click="ExportAllButton_Click"
+                        ToolTip="Экспорт эмбеддингов выбранных говорящих в CSV">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⇩"
+                                   FontSize="16" FontWeight="Bold"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0"
+                                   Foreground="{DynamicResource AppTextBrush}"/>
+                        <TextBlock Text="Экспорт всех"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppTextBrush}"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- Шапка таблицы -->
+            <Grid Grid.Row="1" Margin="12,0,12,4" x:Name="HeaderRow">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="60"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="ИМЯ" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextBrush}" Opacity="0.6"/>
+                <TextBlock Grid.Column="1" Text="ОПИСАНИЕ" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextBrush}" Opacity="0.6" Margin="12,0"/>
+                <TextBlock Grid.Column="2" Text="ЭКСПОРТ" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextBrush}" Opacity="0.6"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Grid.Column="3" Text="ИСТОРИЯ" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextBrush}" Opacity="0.6"/>
+                <TextBlock Grid.Column="4" Text="ПОСЛ. ВЗАИМОД." FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextBrush}" Opacity="0.6"/>
+                <TextBlock Grid.Column="5" Text="УДАЛИТЬ" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppTextBrush}" Opacity="0.6"
+                           HorizontalAlignment="Center"/>
+            </Grid>
+
+            <!-- Список -->
+            <ListView Grid.Row="2" x:Name="SpeakersList"
+                      Background="Transparent" BorderThickness="0"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="0"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="12,8" Margin="0,0,0,6"
+                                Background="{DynamicResource ButtonBackgroundBrush}"
+                                CornerRadius="6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="60"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Имя: inline-редактирование -->
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                         FontSize="14" FontWeight="SemiBold"
+                                         Foreground="{DynamicResource AppTextBrush}"
+                                         Background="Transparent" BorderThickness="0"
+                                         Padding="0" VerticalAlignment="Center"
+                                         KeyDown="NameTextBox_KeyDown"
+                                         ToolTip="Кликните, чтобы изменить имя"/>
+
+                                <!-- Описание: кликабельно -->
+                                <Button Grid.Column="1"
+                                        Content="{Binding Description}"
+                                        Click="Description_Click"
+                                        Background="Transparent" BorderThickness="0"
+                                        HorizontalContentAlignment="Left"
+                                        FontSize="13"
+                                        Foreground="{DynamicResource AppTextBrush}"
+                                        Opacity="0.8" Padding="12,0"
+                                        Cursor="Hand"
+                                        ToolTip="Кликните, чтобы посмотреть и изменить"/>
+
+                                <!-- Экспорт эмбеддинга: иконка-стрелка, ровно по центру колонки -->
+                                <Button Grid.Column="2"
+                                        Width="34" Height="30"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Background="Transparent" BorderThickness="0"
+                                        Cursor="Hand"
+                                        Click="ExportRowButton_Click"
+                                        ToolTip="Экспорт эмбеддинга этого говорящего">
+                                    <TextBlock Text="⇩"
+                                               FontSize="18" FontWeight="Bold"
+                                               Foreground="{DynamicResource AppTextBrush}"/>
+                                    <Button.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Широкий формат (рекомендуется)"
+                                                      Click="ExportRowWide_Click"/>
+                                            <MenuItem Header="Длинный формат"
+                                                      Click="ExportRowLong_Click"/>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
+
+                                <!-- История: кнопка -->
+                                <Button Grid.Column="3"
+                                        Content="📜 Открыть"
+                                        Click="History_Click"
+                                        Background="Transparent" BorderThickness="0"
+                                        FontSize="13"
+                                        Foreground="{DynamicResource AppTextBrush}"
+                                        Cursor="Hand"/>
+
+                                <!-- Дата -->
+                                <TextBlock Grid.Column="4"
+                                           Text="{Binding LastSeenText}"
+                                           FontSize="12" Opacity="0.6"
+                                           Foreground="{DynamicResource AppTextBrush}"
+                                           VerticalAlignment="Center"/>
+
+                                <!-- Удалить -->
+                                <Button Grid.Column="5"
+                                        Content="✕"
+                                        Click="Delete_Click"
+                                        Width="32" Height="32"
+                                        Background="Transparent" BorderThickness="0"
+                                        FontSize="14" FontWeight="Bold"
+                                        Foreground="#E53935"
+                                        Cursor="Hand"
+                                        ToolTip="Удалить говорящего и всю его историю"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <!-- Сообщение для пустой базы -->
+            <TextBlock Grid.Row="2" x:Name="EmptyMessage"
+                       Text="Пока никого нет в базе"
+                       FontSize="16" Opacity="0.5"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Foreground="{DynamicResource AppTextBrush}"
+                       Visibility="Collapsed"/>
+        </Grid>
+
+        <!-- Кнопка назад -->
+        <Button Grid.Row="1" Content="←  Назад" HorizontalAlignment="Right"
+                Margin="0,0,20,10" Height="40" Padding="20,0"
+                Style="{StaticResource BottomButtonStyle}" Click="BtnBack_Click"/>
+    </Grid>
+</UserControl>
